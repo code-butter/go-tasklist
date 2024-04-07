@@ -66,11 +66,7 @@ func (tm *TaskList[R, E]) Work() {
 		}
 	}
 	for done < total {
-		select {
-		case <-next:
-			done++
-		default:
-			time.Sleep(time.Millisecond * 100)
-		}
+		<-next
+		done++
 	}
 }
