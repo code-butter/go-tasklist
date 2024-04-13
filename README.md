@@ -1,17 +1,26 @@
-Task List for Go
+TaskList for Go
 ================
 
-Churn through asynchronous tasks easily with Task List with support for worker limits and timeouts. 
+Churn through asynchronous tasks easily with TaskList with support for worker limits and timeouts. 
 
 
 Usage
 =====
 
-* Create an instance of TaskList with Success and Error types
-* Specify number of concurrent workers
-* Specify timeout
+* Create an instance of `TaskList` or `TaskListInfinite` with Success and Error types. Specify concurrent workers and
+  worker timeout.
+* `TaskList` is designed to run through the supplied functions and then finish, with all results in fields `Results`, 
+  `Errors`, `Timeouts`. Add functions via `Add` and then call `Work` to work through all the jobs. It returns when
+  finished.
+* `TaskListInfinite` is designed to run indefinitely. Specify the callbacks by assigning to `OnResult`, `OnError`, and 
+  `OnTimeout`. Call `Start` and add functions via `Add`. Call `Pause` and `Unpause` to halt starting new tasks, 
+  temporarily, or call `Finish` to work through the remaining tasks and then return.
 * Add functions that return the relevant Success or Error values
+  * Success or error values depend on the zero value of the type. 
 
+
+TaskList Example
+----------------
 ```go
 package main
 
@@ -48,3 +57,5 @@ func main() {
 }
 
 ```
+
+Please see tests for more examples. 

@@ -21,7 +21,7 @@ func (tm *TaskList[R, E]) Add(id string, fn func() (R, E)) {
 
 func (tm *TaskList[R, E]) Work() {
 	total := len(tm.TaskFunctions)
-	next := make(chan bool, total)
+	next := make(chan bool, tm.Workers)
 	var working uint = 0
 	done := 0
 	tm.Results = make(map[string]R)
@@ -30,26 +30,19 @@ func (tm *TaskList[R, E]) Work() {
 	for i := 0; i < total; i++ {
 		index := i
 		nextFunction := func() {
-			id := tm.TaskFunctions[index].Id
-			doneChannel := make(chan taskResult[R, E])
-			performFunction := func() {
-				result, err := tm.TaskFunctions[index].Func()
-				doneChannel <- taskResult[R, E]{Result: result, Error: err}
-			}
-			go performFunction()
-			timeout := time.After(tm.Timeout)
-			select {
-			case result := <-doneChannel:
-				if !isZeroValue(result.Result) {
-					tm.Results[id] = result.Result
+			performTaskFunction(tm.Timeout, tm.TaskFunctions[index], func(id string, result *taskResult[R, E]) {
+				if result == nil {
+					tm.Timeouts = append(tm.Timeouts, id)
+				} else {
+					if !isZeroValue(result.Result) {
+						tm.Results[id] = result.Result
+					}
+					if !isZeroValue(result.Error) {
+						tm.Errors[id] = result.Error
+					}
 				}
-				if !isZeroValue(result.Error) {
-					tm.Errors[id] = result.Error
-				}
-			case <-timeout:
-				tm.Timeouts = append(tm.Timeouts, id)
-			}
-			next <- true
+				next <- true
+			})
 		}
 		go nextFunction()
 		working++
